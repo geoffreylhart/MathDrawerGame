@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{AD0A00E0-FFA0-4B44-A40D-C0C0F6FCD80C}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MathDrawerGame</RootNamespace>
+    <AssemblyName>MathDrawerGame</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <MonoGamePlatform>Windows</MonoGamePlatform>
+    <MonoGameContentBuilderExe>
+    </MonoGameContentBuilderExe>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Windows\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;WINDOWS</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Windows\Release\</OutputPath>
+    <DefineConstants>TRACE;WINDOWS</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>
+    </ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AI\Animations\AnimationFrom1D.cs" />
+    <Compile Include="AI\Animations\CombinedAnimation.cs" />
+    <Compile Include="AI\Animations\CombinedAnimation2D.cs" />
+    <Compile Include="AI\Animations\EmptyAnimation2D.cs" />
+    <Compile Include="AI\Animations\ParabolicAnimation.cs" />
+    <Compile Include="AI\CritcalLaunchTester.cs" />
+    <Compile Include="AI\LaunchTester.cs" />
+    <Compile Include="AI\PathEquations\Bounds.cs" />
+    <Compile Include="AI\Animations\IAnimation.cs" />
+    <Compile Include="AI\Animations\IAnimation2D.cs" />
+    <Compile Include="AI\PathEquations\ISpeedTimeFunction.cs" />
+    <Compile Include="AI\Animations\ParabolicAnimation2D.cs" />
+    <Compile Include="AI\PathEquations\ReturnFasterEq.cs" />
+    <Compile Include="AI\PathEquations\ReturnSlowerEq.cs" />
+    <Compile Include="AI\PathEquations\StraightEq.cs" />
+    <Compile Include="AI\PointDebugger.cs" />
+    <Compile Include="AI\SimpleAITester.cs" />
+    <Compile Include="BasicEffectGen.cs" />
+    <Compile Include="BasicEffectHelper.cs" />
+    <Compile Include="Game1.cs" />
+    <Compile Include="Geom\AdvGeomLogic.cs" />
+    <Compile Include="Geom\IntLine.cs" />
+    <Compile Include="Geom\IntPoint.cs" />
+    <Compile Include="Geom\Line2D.cs" />
+    <Compile Include="Geom\ParabolaSegment.cs" />
+    <Compile Include="Geom\Vector2D.cs" />
+    <Compile Include="HumanPlayer.cs" />
+    <Compile Include="LevelEditor\EditableTerrain.cs" />
+    <Compile Include="LevelEditor\LevelEditorGame.cs" />
+    <Compile Include="LevelEditor\SavableTerrain.cs" />
+    <Compile Include="LevelEditor\SavableTerrain2D.cs" />
+    <Compile Include="MainTerrain.cs" />
+    <Compile Include="MathHelper.cs" />
+    <Compile Include="Movement2D.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>$(MSBuildProgramFiles32)\MonoGame\v3.0\Assemblies\Windows\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="Content\Content.mgcb" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
