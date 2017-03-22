@@ -63,47 +63,31 @@ namespace MathDrawerGame.AI
                             foreach (var time in dfunctions[i].times)
                             {
                                 // TODO: I believe a remaining bug just has to do with when a slope flips over
-                                if (time.Key <= 0)
+                                for (int d = 0; d < 2; d++)
                                 {
-                                    // copy pasted
-                                    var path = new StraightEq(1, -1, leftline.Length);
-                                    Bounds vbounds = path.EBound(-time.Key / PREC);
-                                    int low = (int)Math.Ceiling(vbounds.low * PREC);
-                                    int high = (int)(vbounds.high * PREC);
-                                    for (int j = low; j <= high; j++)
+                                    if ((d == 0) ? (time.Key <= 0) : (time.Key >= 0))
                                     {
-                                        Vector2D pos = thepoint;
-                                        Vector2D vector = leftline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
-                                        IAnimation pathanim = path.Animate(-time.Key / PREC, j / PREC);
-                                        if (pathanim == null) continue; // this has happened
-                                        IAnimation2D animation = new AnimationFrom1D(pos, vector, pathanim);
-                                        animation = time.Value + animation;
-                                        if (newdfunctions[lefti] == null) newdfunctions[lefti] = new DiscreteFunction();
-                                        if (!newdfunctions[lefti].times.ContainsKey(-j) || animation.Time() < newdfunctions[lefti].times[-j].Time())
+                                        Line2D theline = (d == 0) ? leftline : rightline;
+                                        int thei = (d == 0) ? lefti : righti;
+                                        int sign = (d == 0) ? -1 : 1;
+                                        // copy pasted
+                                        var path = new StraightEq(1, -1, theline.Length);
+                                        Bounds vbounds = path.EBound(sign*time.Key / PREC);
+                                        int low = (int)Math.Ceiling(vbounds.low * PREC);
+                                        int high = (int)(vbounds.high * PREC);
+                                        for (int j = low; j <= high; j++)
                                         {
-                                            newdfunctions[lefti].Put(-j, animation);
-                                        }
-                                    }
-                                }
-                                if (time.Key >= 0)
-                                {
-                                    // copy pasted
-                                    var path = new StraightEq(1, -1, rightline.Length);
-                                    Bounds vbounds = path.EBound(time.Key / PREC);
-                                    int low = (int)Math.Ceiling(vbounds.low * PREC);
-                                    int high = (int)(vbounds.high * PREC);
-                                    for (int j = low; j <= high; j++)
-                                    {
-                                        Vector2D pos = thepoint;
-                                        Vector2D vector = rightline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
-                                        IAnimation pathanim = path.Animate(time.Key / PREC, j / PREC);
-                                        if (pathanim == null) continue; // this has happened
-                                        IAnimation2D animation = new AnimationFrom1D(pos, vector, pathanim);
-                                        animation = time.Value + animation;
-                                        if (newdfunctions[righti] == null) newdfunctions[righti] = new DiscreteFunction();
-                                        if (!newdfunctions[righti].times.ContainsKey(j) || animation.Time() < newdfunctions[righti].times[j].Time())
-                                        {
-                                            newdfunctions[righti].Put(j, animation);
+                                            Vector2D pos = thepoint;
+                                            Vector2D vector = theline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
+                                            IAnimation pathanim = path.Animate(sign*time.Key / PREC, j / PREC);
+                                            if (pathanim == null) continue; // this has happened
+                                            IAnimation2D animation = new AnimationFrom1D(pos, vector, pathanim);
+                                            animation = time.Value + animation;
+                                            if (newdfunctions[thei] == null) newdfunctions[thei] = new DiscreteFunction();
+                                            if (!newdfunctions[thei].times.ContainsKey(sign * j) || animation.Time() < newdfunctions[thei].times[sign*j].Time())
+                                            {
+                                                newdfunctions[thei].Put(sign*j, animation);
+                                            }
                                         }
                                     }
                                 }
