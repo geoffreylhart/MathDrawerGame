@@ -60,37 +60,15 @@ namespace MathDrawerGame.AI
                             }
                             int lefti = mainTerrainClone.points.IndexOf(leftline.OtherP(thepoint));
                             int righti = mainTerrainClone.points.IndexOf(rightline.OtherP(thepoint));
-                            foreach (var time in dfunctions[i].times)
+                            foreach (var time in dfunctions[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
                             {
                                 // TODO: I believe a remaining bug just has to do with when a slope flips over
-                                for (int d = 0; d < 2; d++)
-                                {
-                                    if ((d == 0) ? (time.Key <= 0) : (time.Key >= 0))
-                                    {
-                                        Line2D theline = (d == 0) ? leftline : rightline;
-                                        int thei = (d == 0) ? lefti : righti;
-                                        int sign = (d == 0) ? -1 : 1;
-                                        // copy pasted
-                                        var path = new StraightEq(1, -1, theline.Length);
-                                        Bounds vbounds = path.EBound(sign*time.Key / PREC);
-                                        int low = (int)Math.Ceiling(vbounds.low * PREC);
-                                        int high = (int)(vbounds.high * PREC);
-                                        for (int j = low; j <= high; j++)
-                                        {
-                                            Vector2D pos = thepoint;
-                                            Vector2D vector = theline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
-                                            IAnimation pathanim = path.Animate(sign*time.Key / PREC, j / PREC);
-                                            if (pathanim == null) continue; // this has happened
-                                            IAnimation2D animation = new AnimationFrom1D(pos, vector, pathanim);
-                                            animation = time.Value + animation;
-                                            if (newdfunctions[thei] == null) newdfunctions[thei] = new DiscreteFunction();
-                                            if (!newdfunctions[thei].times.ContainsKey(sign * j) || animation.Time() < newdfunctions[thei].times[sign*j].Time())
-                                            {
-                                                newdfunctions[thei].Put(sign*j, animation);
-                                            }
-                                        }
-                                    }
-                                }
+                                DoAThing(time, leftline, thepoint, lefti, -1, newdfunctions, new StraightEq(1, -1, leftline.Length));
+                                DoAThing(time, rightline, thepoint, righti, 1, newdfunctions, new StraightEq(1, -1, rightline.Length));
+                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnFasterEq(1, -1, leftline.Length));
+                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnFasterEq(1, -1, rightline.Length));
+                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnSlowerEq(1, -1, leftline.Length)); // something wrong with this one?
+                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnSlowerEq(1, -1, rightline.Length)); // something wrong with this one?
                             }
                         }
                     }
@@ -104,6 +82,30 @@ namespace MathDrawerGame.AI
                 }
             }
             prevbutton = Mouse.GetState().RightButton;
+        }
+
+        private void DoAThing(KeyValuePair<int, IAnimation2D> time, Line2D theline, Vector2D thepoint, int thei, int sign, DiscreteFunction[] newdfunctions, ISpeedTimeFunction path)
+        {
+            if (time.Key * sign >= 0)
+            {
+                Bounds vbounds = path.EBound(sign * time.Key / PREC);
+                if (vbounds == null) return;
+                int low = (int)Math.Ceiling(vbounds.low * PREC);
+                int high = (int)(vbounds.high * PREC);
+                Vector2D vector = theline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
+                for (int j = low; j <= high; j++)
+                {
+                    IAnimation pathanim = path.Animate(sign * time.Key / PREC, j / PREC);
+                    if (pathanim == null) continue; // this has happened, I think
+                    IAnimation2D animation = new AnimationFrom1D(thepoint, vector, pathanim);
+                    animation = time.Value + animation;
+                    if (newdfunctions[thei] == null) newdfunctions[thei] = new DiscreteFunction();
+                    if (!newdfunctions[thei].times.ContainsKey(sign * j) || animation.Time() < newdfunctions[thei].times[sign * j].Time())
+                    {
+                        newdfunctions[thei].Put(sign * j, animation);
+                    }
+                }
+            }
         }
 
         private DiscreteFunction[] InitializeDFunctions(HumanPlayer player, SavableTerrain2D mainTerrain, int i1, int i2, int l1)
@@ -125,9 +127,9 @@ namespace MathDrawerGame.AI
         }
         internal void Draw(BasicEffect basicEffect, GraphicsDevice GraphicsDevice)
         {
-            if (animation != null && timein < animation.Time())
+            if (animation != null)
             {
-                Vector2D pos = animation.Pos(timein);
+                Vector2D pos = animation.Pos(timein%animation.Time()); // loop the animation to help with debugging
                 basicEffect.DrawPoint(GraphicsDevice, pos.x, pos.y, Color.Blue);
             }
         }

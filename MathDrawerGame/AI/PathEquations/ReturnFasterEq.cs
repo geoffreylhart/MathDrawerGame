@@ -141,7 +141,37 @@ namespace MathDrawerGame.AI.PathEquations
 
         public IAnimation Animate(double s, double e)
         {
-            throw new NotImplementedException();
+            // literally copy pasted from F
+            double a = 0.5 * a1 + 0.5 * a1 * a1 / a2 - a1 * a1 / a2;
+            double b = s - 1 / a2 * (e - s) * a1 + a1 * (e - s) / a2 - a1 * s / a2;
+            double c = 0.5 * (e - s) * (e - s) / a2 + s * (e - s) / a2;
+            if (b * b - 4 * a * c < 0) return null;
+            double t1n = (-b - Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+            double t1p = (-b + Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+            double t2n = (e - s - a1 * t1n) / a2;
+            double t2p = (e - s - a1 * t1p) / a2;
+            double tn = t1n + t2n;
+            double tp = t1p + t2p;
+            // copy pasted below from StraightEq
+            if (tn < tp && Valid(t1n, t2n, s))
+            {
+                IAnimation anim = new ParabolicAnimation(0, s, a1, t1n);
+                anim = anim + new ParabolicAnimation(anim.EndPos(), anim.EndV(), a2, t2n);
+                return anim;
+            }
+            if (Valid(t1p, t2p, s))
+            {
+                IAnimation anim = new ParabolicAnimation(0, s, a1, t1p);
+                anim = anim + new ParabolicAnimation(anim.EndPos(), anim.EndV(), a2, t2p);
+                return anim;
+            }
+            if (Valid(t1n, t2n, s))
+            {
+                IAnimation anim = new ParabolicAnimation(0, s, a1, t1n);
+                anim = anim + new ParabolicAnimation(anim.EndPos(), anim.EndV(), a2, t2n);
+                return anim;
+            }
+            return null;
         }
     }
 }

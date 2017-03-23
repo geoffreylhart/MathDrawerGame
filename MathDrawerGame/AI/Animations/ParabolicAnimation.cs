@@ -11,6 +11,7 @@ namespace MathDrawerGame.AI.Animations
         private double pos;
         private double v;
         private double a;
+        public String debuginfo;
         public ParabolicAnimation(double pos, double v, double a, double time)
         {
             this.time = time;

@@ -141,7 +141,44 @@ namespace MathDrawerGame.AI.PathEquations
 
         public IAnimation Animate(double s, double e)
         {
-            throw new NotImplementedException();
+            // literally copy pasted from F
+            double a = 0.5 * a2 + 0.5 * a2 * a2 / a1 - a2 * a2 / a1;
+            double b = s - 1 / a1 * (e - s) * a2 + a2 * (e - s) / a1 - a2 * s / a1;
+            double c = 0.5 * (e - s) * (e - s) / a1 + s * (e - s) / a1;
+            if (b * b - 4 * a * c < 0) return null;
+            double t1n = (-b - Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+            double t1p = (-b + Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+            double t2n = (e - s - a2 * t1n) / a1;
+            double t2p = (e - s - a2 * t1p) / a1;
+            double tn = t1n + t2n;
+            double tp = t1p + t2p;
+            // copy pasted below from straighteq
+            // MISTAKE: I say above that I swapped a1 and a2 from the returnfaster eq, but I failed to do so below when copying
+            if (tn < tp && Valid(t1n, t2n, s))
+            {
+                ParabolicAnimation asparab = new ParabolicAnimation(0, s, a2, t1n);
+                asparab.debuginfo = "s: " + s + " e: " + e;
+                IAnimation anim = asparab;
+                anim = anim + new ParabolicAnimation(anim.EndPos(), anim.EndV(), a1, t2n);
+                return anim;
+            }
+            if (Valid(t1p, t2p, s))
+            {
+                ParabolicAnimation asparab = new ParabolicAnimation(0, s, a2, t1p);
+                asparab.debuginfo = "s: " + s + " e: " + e;
+                IAnimation anim = asparab;
+                anim = anim + new ParabolicAnimation(anim.EndPos(), anim.EndV(), a1, t2p);
+                return anim;
+            }
+            if (Valid(t1n, t2n, s))
+            {
+                ParabolicAnimation asparab = new ParabolicAnimation(0, s, a2, t1n);
+                asparab.debuginfo = "s: " + s + " e: "+e;
+                IAnimation anim = asparab;
+                anim = anim + new ParabolicAnimation(anim.EndPos(), anim.EndV(), a1, t2n);
+                return anim;
+            }
+            return null;
         }
     }
 }
