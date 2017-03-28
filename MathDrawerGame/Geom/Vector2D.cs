@@ -66,5 +66,10 @@ namespace MathDrawerGame.Geom
         }
 
         public double M { get { return y / x; } }
+
+        public double GravityMultiplier()
+        {
+            return Math.Abs(this.y) / this.Length();
+        }
     }
 }

@@ -14,6 +14,8 @@ namespace MathDrawerGame.AI
 {
     class SimpleAITester : PointDebugger
     {
+        double apg = 30; // meters per second squared (4.47=performance car, 12.2=fastest exotic car)
+        public double ay = 9.8; // gravity, meters per second squared
         public static double PREC = 100;
         IAnimation2D animation = null;
         double timein = 0;
@@ -60,15 +62,19 @@ namespace MathDrawerGame.AI
                             }
                             int lefti = mainTerrainClone.points.IndexOf(leftline.OtherP(thepoint));
                             int righti = mainTerrainClone.points.IndexOf(rightline.OtherP(thepoint));
+                            double lefta1 = apg + leftline.AsVector2D().GravityMultiplier() * ay;
+                            double lefta2 = -apg + leftline.AsVector2D().GravityMultiplier() * ay;
+                            double righta1 = apg + rightline.AsVector2D().GravityMultiplier() * ay;
+                            double righta2 = -apg + rightline.AsVector2D().GravityMultiplier() * ay;
                             foreach (var time in dfunctions[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
                             {
                                 // TODO: I believe a remaining bug just has to do with when a slope flips over
-                                DoAThing(time, leftline, thepoint, lefti, -1, newdfunctions, new StraightEq(1, -1, leftline.Length));
-                                DoAThing(time, rightline, thepoint, righti, 1, newdfunctions, new StraightEq(1, -1, rightline.Length));
-                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnFasterEq(1, -1, leftline.Length));
-                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnFasterEq(1, -1, rightline.Length));
-                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnSlowerEq(1, -1, leftline.Length)); // something wrong with this one?
-                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnSlowerEq(1, -1, rightline.Length)); // something wrong with this one?
+                                DoAThing(time, leftline, thepoint, lefti, -1, newdfunctions, new StraightEq(lefta1, lefta2, leftline.Length));
+                                DoAThing(time, rightline, thepoint, righti, 1, newdfunctions, new StraightEq(righta1, righta2, rightline.Length));
+                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnFasterEq(lefta1, lefta2, leftline.Length));
+                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnFasterEq(righta1, righta2, rightline.Length));
+                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnSlowerEq(lefta1, lefta2, leftline.Length));
+                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnSlowerEq(righta1, righta2, rightline.Length));
                             }
                         }
                     }
