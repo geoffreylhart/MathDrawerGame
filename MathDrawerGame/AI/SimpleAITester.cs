@@ -35,102 +35,135 @@ namespace MathDrawerGame.AI
                 int i1 = mainTerrain.points.IndexOf(player.attached.p1);
                 int i2 = mainTerrain.points.IndexOf(player.attached.p2);
                 int l1 = mainTerrain.lines.IndexOf(player.attached);
-                DiscreteFunction[] dfunctions = InitializeDFunctions(player, mainTerrainClone, i1, i2, l1);
-                for (int it = 0; it < 6; it++) // just trying 3 moves currently
+                DiscreteFunction dfunction = InitializeDFunction(player, mainTerrainClone, i1, i2, l1); // also alters the terrain
+                DiscreteFunction[] dfunctions1 = new DiscreteFunction[mainTerrain.points.Count + 1];
+                DiscreteFunction[] dfunctions2 = new DiscreteFunction[mainTerrain.points.Count + 1];
+                dfunctions1[dfunctions1.Length - 1] = dfunction;
+                if (player.vp == 0)
                 {
-                    DiscreteFunction[] newdfunctions = new DiscreteFunction[mainTerrainClone.points.Count]; // I think these functions were going to include negative values
-                    for (int i = 0; i < mainTerrainClone.points.Count; i++) newdfunctions[i] = dfunctions[i]; // MISTAKE: didn't make a copy, meaning I'd only do paths that took 3 moves
+                    dfunctions2[dfunctions1.Length - 1] = dfunction;
+                }
+                for (int it = 0; it < 3; it++) // just trying 3 moves currently
+                {
+                    DiscreteFunction[] newdfunctions1 = new DiscreteFunction[mainTerrainClone.points.Count]; // I think these functions were going to include negative values
+                    DiscreteFunction[] newdfunctions2 = new DiscreteFunction[mainTerrainClone.points.Count];
+                    for (int i = 0; i < mainTerrainClone.points.Count; i++) newdfunctions1[i] = dfunctions1[i]; // MISTAKE: didn't make a copy, meaning I'd only do paths that took 3 moves
+                    for (int i = 0; i < mainTerrainClone.points.Count; i++) newdfunctions2[i] = dfunctions2[i]; 
                     // going to brute force everything for now, to insure things are working
                     // as I recall, I basically did this already
                     // for every point, get that points functions and just map them from every bloody thing 
-                    for (int i = 0; i < dfunctions.Length; i++)
+                    for (int i = 0; i < mainTerrainClone.points.Count; i++)
                     {
                         Vector2D thepoint = mainTerrainClone.points[i];
-                        if (dfunctions[i] != null)
+                        // get the connecting points
+                        var connecting = mainTerrainClone.Attached(thepoint);
+                        if (dfunctions1[i] != null)
                         {
-                            // get the connecting points
-                            // TODO: we're going to decide for now that negative/positive speed is relative to the x component on the screen or whatever
-                            var connecting = mainTerrainClone.Attached(thepoint);
-                            Line2D leftline = connecting[0];
-                            Line2D rightline = connecting[1];
-                            // MISTAKE: because we're cheating, we need to decide if vertical is a leftline or rightline (i've chosen left)
-                            if ((leftline.p1 == thepoint) ? (leftline.DX > 0) : (leftline.DX <= 0)) // swap
+                            Line2D theline = connecting[0];
+                            int thei = mainTerrainClone.points.IndexOf(theline.OtherP(thepoint));
+                            double thea1 = apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            double thea2 = -apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
+                            foreach (var time in dfunctions1[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
                             {
-                                var temp = leftline;
-                                leftline = rightline;
-                                rightline = temp;
+                                if (attachedattached[0] == theline) // weird logic, pretty sure this is whats broken
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                else
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                DoAThing(time, theline, thepoint, i, newdfunctions2, new ReturnFasterEq(thea1, thea2, theline.Length)); // because you return, you are always returning to the same point using the other function list
+                                DoAThing(time, theline, thepoint, i, newdfunctions2, new ReturnSlowerEq(thea1, thea2, theline.Length));
                             }
-                            int lefti = mainTerrainClone.points.IndexOf(leftline.OtherP(thepoint));
-                            int righti = mainTerrainClone.points.IndexOf(rightline.OtherP(thepoint));
-                            double lefta1 = apg + leftline.AsVector2D().GravityMultiplier() * ay;
-                            double lefta2 = -apg + leftline.AsVector2D().GravityMultiplier() * ay;
-                            double righta1 = apg + rightline.AsVector2D().GravityMultiplier() * ay;
-                            double righta2 = -apg + rightline.AsVector2D().GravityMultiplier() * ay;
-                            foreach (var time in dfunctions[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
+                        }
+                        if (dfunctions2[i] != null)
+                        {
+                            Line2D theline = connecting[1];
+                            int thei = mainTerrainClone.points.IndexOf(theline.OtherP(thepoint));
+                            double thea1 = apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            double thea2 = -apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
+                            foreach (var time in dfunctions2[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
                             {
-                                // TODO: I believe a remaining bug just has to do with when a slope flips over
-                                DoAThing(time, leftline, thepoint, lefti, -1, newdfunctions, new StraightEq(lefta1, lefta2, leftline.Length));
-                                DoAThing(time, rightline, thepoint, righti, 1, newdfunctions, new StraightEq(righta1, righta2, rightline.Length));
-                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnFasterEq(lefta1, lefta2, leftline.Length));
-                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnFasterEq(righta1, righta2, rightline.Length));
-                                DoAThing(time, leftline, thepoint, i, -1, newdfunctions, new ReturnSlowerEq(lefta1, lefta2, leftline.Length));
-                                DoAThing(time, rightline, thepoint, i, 1, newdfunctions, new ReturnSlowerEq(righta1, righta2, rightline.Length));
+                                if (attachedattached[0] == theline)
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                else
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                DoAThing(time, theline, thepoint, i, newdfunctions1, new ReturnFasterEq(thea1, thea2, theline.Length));
+                                DoAThing(time, theline, thepoint, i, newdfunctions1, new ReturnSlowerEq(thea1, thea2, theline.Length));
                             }
                         }
                     }
-                    dfunctions = newdfunctions;
+                    dfunctions1 = newdfunctions1;
+                    dfunctions2 = newdfunctions2;
                 }
                 int itarget = mainTerrain.points.IndexOf(SelectedPoint);
-                if (dfunctions[itarget] != null && dfunctions[itarget].Get(0) != null)
+                if (dfunctions1[itarget] != null && dfunctions1[itarget].Get(0) != null)
                 {
-                    animation = dfunctions[itarget].Get(0);
+                    animation = dfunctions1[itarget].Get(0);
+                    timein = 0;
+                }
+                else if (dfunctions2[itarget] != null && dfunctions2[itarget].Get(0) != null)
+                {
+                    animation = dfunctions2[itarget].Get(0);
                     timein = 0;
                 }
             }
             prevbutton = Mouse.GetState().RightButton;
         }
 
-        private void DoAThing(KeyValuePair<int, IAnimation2D> time, Line2D theline, Vector2D thepoint, int thei, int sign, DiscreteFunction[] newdfunctions, ISpeedTimeFunction path)
+        private void DoAThing(KeyValuePair<int, IAnimation2D> time, Line2D theline, Vector2D thepoint, int thei, DiscreteFunction[] newdfunctions, ISpeedTimeFunction path)
         {
-            if (time.Key * sign >= 0)
+            Bounds vbounds = path.EBound(time.Key / PREC);
+            if (vbounds == null) return;
+            int low = (int)Math.Ceiling(vbounds.low * PREC);
+            int high = (int)(vbounds.high * PREC);
+            Vector2D vector = theline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
+            for (int j = low; j <= high; j++)
             {
-                Bounds vbounds = path.EBound(sign * time.Key / PREC);
-                if (vbounds == null) return;
-                int low = (int)Math.Ceiling(vbounds.low * PREC);
-                int high = (int)(vbounds.high * PREC);
-                Vector2D vector = theline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
-                for (int j = low; j <= high; j++)
+                IAnimation pathanim = path.Animate(time.Key / PREC, j / PREC);
+                if (pathanim == null) continue; // this has happened, I think
+                IAnimation2D animation = new AnimationFrom1D(thepoint, vector, pathanim);
+                animation = time.Value + animation;
+                if (newdfunctions[thei] == null) newdfunctions[thei] = new DiscreteFunction();
+                if (!newdfunctions[thei].times.ContainsKey(Math.Abs(j)) || animation.Time() < newdfunctions[thei].times[Math.Abs(j)].Time())
                 {
-                    IAnimation pathanim = path.Animate(sign * time.Key / PREC, j / PREC);
-                    if (pathanim == null) continue; // this has happened, I think
-                    IAnimation2D animation = new AnimationFrom1D(thepoint, vector, pathanim);
-                    animation = time.Value + animation;
-                    if (newdfunctions[thei] == null) newdfunctions[thei] = new DiscreteFunction();
-                    if (!newdfunctions[thei].times.ContainsKey(sign * j) || animation.Time() < newdfunctions[thei].times[sign * j].Time())
-                    {
-                        newdfunctions[thei].Put(sign * j, animation);
-                    }
+                    newdfunctions[thei].Put(Math.Abs(j), animation);
                 }
             }
         }
 
-        private DiscreteFunction[] InitializeDFunctions(HumanPlayer player, SavableTerrain2D mainTerrain, int i1, int i2, int l1)
+        private DiscreteFunction InitializeDFunction(HumanPlayer player, SavableTerrain2D mainTerrain, int i1, int i2, int l1) // i1 represents p1
         {
             Vector2D startpoint = player.attached.At(player.p);
             mainTerrain.points.Add(startpoint);
             mainTerrain.lines.RemoveAt(l1);
-            mainTerrain.lines.Add(new Line2D(mainTerrain.points[i1], startpoint));
-            mainTerrain.lines.Add(new Line2D(startpoint, mainTerrain.points[i2]));
+            if (player.vp > 0) // you're traveling towards i2, so make that segment have the lower index
+            {
+                mainTerrain.lines.Add(new Line2D(startpoint, mainTerrain.points[i2]));
+                mainTerrain.lines.Add(new Line2D(mainTerrain.points[i1], startpoint));
+            }
+            else
+            {
+                mainTerrain.lines.Add(new Line2D(mainTerrain.points[i1], startpoint));
+                mainTerrain.lines.Add(new Line2D(startpoint, mainTerrain.points[i2]));
+            }
             DiscreteFunction[] dfunctions = new DiscreteFunction[mainTerrain.points.Count];
             DiscreteFunction startfunc = new DiscreteFunction();
             dfunctions[mainTerrain.points.Count - 1] = startfunc;
             // TODO: figure out gravity and accelerations and stuff
             // TODO: do the othe returnfaster/returnslower
             double v = player.vp * player.attached.Length;
-            bool movingleft = (player.attached.DX < 0);
-            startfunc.Put((int)Math.Round(v * PREC * (movingleft ? -1 : 1)), new EmptyAnimation2D());
-            return dfunctions;
+            startfunc.Put((int)Math.Round(Math.Abs(v * PREC)), new EmptyAnimation2D());
+            return startfunc;
         }
+
         internal void Draw(BasicEffect basicEffect, GraphicsDevice GraphicsDevice)
         {
             if (animation != null)
