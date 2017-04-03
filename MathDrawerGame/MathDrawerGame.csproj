@@ -44,7 +44,9 @@
     <Compile Include="AI\Animations\CombinedAnimation2D.cs" />
     <Compile Include="AI\Animations\EmptyAnimation2D.cs" />
     <Compile Include="AI\Animations\ParabolicAnimation.cs" />
+    <Compile Include="AI\CachedAITester.cs" />
     <Compile Include="AI\CritcalLaunchTester.cs" />
+    <Compile Include="AI\DiscreteFunction.cs" />
     <Compile Include="AI\LaunchTester.cs" />
     <Compile Include="AI\PathEquations\Bounds.cs" />
     <Compile Include="AI\Animations\IAnimation.cs" />

@@ -12,11 +12,11 @@ using System.Text;
 
 namespace MathDrawerGame.AI
 {
-    class SimpleAITester : PointDebugger
+    class CachedAITester : PointDebugger
     {
         double apg = 30; // meters per second squared (4.47=performance car, 12.2=fastest exotic car)
         public double ay = 9.8; // gravity, meters per second squared
-        public static double PREC = 10;
+        public static double PREC = 100;
         IAnimation2D animation = null;
         double timein = 0;
         ButtonState prevbutton = ButtonState.Released;
@@ -48,17 +48,57 @@ namespace MathDrawerGame.AI
                     DiscreteFunction[] newdfunctions1 = new DiscreteFunction[mainTerrainClone.points.Count]; // I think these functions were going to include negative values
                     DiscreteFunction[] newdfunctions2 = new DiscreteFunction[mainTerrainClone.points.Count];
                     for (int i = 0; i < mainTerrainClone.points.Count; i++) newdfunctions1[i] = dfunctions1[i]; // MISTAKE: didn't make a copy, meaning I'd only do paths that took 3 moves
-                    for (int i = 0; i < mainTerrainClone.points.Count; i++) newdfunctions2[i] = dfunctions2[i]; 
+                    for (int i = 0; i < mainTerrainClone.points.Count; i++) newdfunctions2[i] = dfunctions2[i];
                     // going to brute force everything for now, to insure things are working
                     // as I recall, I basically did this already
                     // for every point, get that points functions and just map them from every bloody thing 
                     for (int i = 0; i < mainTerrainClone.points.Count; i++)
                     {
-                        // get the connecting points
                         Vector2D thepoint = mainTerrainClone.points[i];
+                        // get the connecting points
                         var connecting = mainTerrainClone.Attached(thepoint);
-                        DoAThing2(connecting[0], dfunctions1[i], newdfunctions2, newdfunctions1, newdfunctions2, i, mainTerrainClone);
-                        DoAThing2(connecting[1], dfunctions2[i], newdfunctions1, newdfunctions1, newdfunctions2, i, mainTerrainClone);
+                        if (dfunctions1[i] != null)
+                        {
+                            Line2D theline = connecting[0];
+                            int thei = mainTerrainClone.points.IndexOf(theline.OtherP(thepoint));
+                            double thea1 = apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            double thea2 = -apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
+                            foreach (var time in dfunctions1[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
+                            {
+                                if (attachedattached[0] == theline) // weird logic, pretty sure this is whats broken
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                else
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                DoAThing(time, theline, thepoint, i, newdfunctions2, new ReturnFasterEq(thea1, thea2, theline.Length)); // because you return, you are always returning to the same point using the other function list
+                                DoAThing(time, theline, thepoint, i, newdfunctions2, new ReturnSlowerEq(thea1, thea2, theline.Length));
+                            }
+                        }
+                        if (dfunctions2[i] != null)
+                        {
+                            Line2D theline = connecting[1];
+                            int thei = mainTerrainClone.points.IndexOf(theline.OtherP(thepoint));
+                            double thea1 = apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            double thea2 = -apg + theline.AsVector2D().GravityMultiplier() * ay;
+                            var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
+                            foreach (var time in dfunctions2[i].times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
+                            {
+                                if (attachedattached[0] == theline)
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                else
+                                {
+                                    DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
+                                }
+                                DoAThing(time, theline, thepoint, i, newdfunctions1, new ReturnFasterEq(thea1, thea2, theline.Length));
+                                DoAThing(time, theline, thepoint, i, newdfunctions1, new ReturnSlowerEq(thea1, thea2, theline.Length));
+                            }
+                        }
                     }
                     dfunctions1 = newdfunctions1;
                     dfunctions2 = newdfunctions2;
@@ -76,31 +116,6 @@ namespace MathDrawerGame.AI
                 }
             }
             prevbutton = Mouse.GetState().RightButton;
-        }
-
-        private void DoAThing2(Line2D theline, DiscreteFunction dfunction, DiscreteFunction[] newdfunctions, DiscreteFunction[] newdfunctions1, DiscreteFunction[] newdfunctions2, int i, SavableTerrain2D mainTerrainClone)
-        {
-            if (dfunction != null)
-            {
-                Vector2D thepoint = mainTerrainClone.points[i];
-                int thei = mainTerrainClone.points.IndexOf(theline.OtherP(thepoint));
-                double thea1 = apg + theline.AsVector2D().GravityMultiplier() * ay;
-                double thea2 = -apg + theline.AsVector2D().GravityMultiplier() * ay;
-                var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
-                foreach (var time in dfunction.times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
-                {
-                    if (attachedattached[0] == theline) // weird logic, pretty sure this is whats broken
-                    {
-                        DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
-                    }
-                    else
-                    {
-                        DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
-                    }
-                    DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnFasterEq(thea1, thea2, theline.Length)); // because you return, you are always returning to the same point using the other function list
-                    DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnSlowerEq(thea1, thea2, theline.Length));
-                }
-            }
         }
 
         private void DoAThing(KeyValuePair<int, IAnimation2D> time, Line2D theline, Vector2D thepoint, int thei, DiscreteFunction[] newdfunctions, ISpeedTimeFunction path)
@@ -153,7 +168,7 @@ namespace MathDrawerGame.AI
         {
             if (animation != null)
             {
-                Vector2D pos = animation.Pos(timein%animation.Time()); // loop the animation to help with debugging
+                Vector2D pos = animation.Pos(timein % animation.Time()); // loop the animation to help with debugging
                 basicEffect.DrawPoint(GraphicsDevice, pos.x, pos.y, Color.Blue);
             }
         }
