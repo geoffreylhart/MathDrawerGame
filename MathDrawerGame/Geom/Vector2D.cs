@@ -71,5 +71,10 @@ namespace MathDrawerGame.Geom
         {
             return Math.Abs(this.y) / this.Length();
         }
+
+        internal double CrossProduct(Vector2D v2)
+        {
+            return this.x * v2.y - v2.x * this.y;
+        }
     }
 }

@@ -10,17 +10,22 @@ namespace MathDrawerGame.AI
 {
     class LaunchTester : PointDebugger
     {
-        List<ParabolaSegment> parabs = new List<ParabolaSegment>();
+        List<MathDrawerGame.Geom.AdvGeomLogic.JumpInfo> fullinfos = new List<AdvGeomLogic.JumpInfo>();
         internal void Draw(BasicEffect basicEffect, GraphicsDevice GraphicsDevice)
         {
             if (SelectedPoint != null)
             {
                 basicEffect.DrawPoint(GraphicsDevice, SelectedPoint.x, SelectedPoint.y, Color.Red);
             }
-            foreach (ParabolaSegment parab in parabs)
+            foreach (var fullinfo in fullinfos)
             {
-                basicEffect.DrawParabola(GraphicsDevice, parab, Color.Red);
+                //basicEffect.DrawAnimation(GraphicsDevice, fullinfo.anim, Color.Red);
+                foreach (ParabolaSegment parab in fullinfo.parabs)
+                {
+                    basicEffect.DrawParabola(GraphicsDevice, parab, Color.Red);
+                }
             }
+           
         }
 
         double v = 0;
@@ -36,61 +41,15 @@ namespace MathDrawerGame.AI
                 v += 0.02;
             }
             if (v > 100) v = 0; // TDOD: debug pure zero v, I'm not sure we expect it to fall through
-            parabs.Clear();
             if (SelectedPoint != null)
             {
+                fullinfos.Clear();
                 IntLine[] lines = mainTerrain.Attached(SelectedPoint);
                 foreach (IntLine line in lines)
                 {
                     Vector2D velocity = line.AsVector2DWithEnd(SelectedPoint).Normalize(v);
-                    ParabolaSegment newparab = ParabolaSegment.FromBasics(SelectedPoint.AsVector2D(), velocity, player.ay, 10);
-                    IntLine linetonotcollide = line;
-                    IntLine[] linestobewaryof = lines;
-                    for (int i = 0; i < 10; i++)
-                    {
-                        double mint = double.PositiveInfinity;
-                        IntLine collider = null;
-                        foreach (IntLine collide in mainTerrain.lines)
-                        {
-                            double? collidetime;
-                            if (linetonotcollide == collide)
-                            {
-                                continue; // we expect two zeroes
-                            }
-                            else if (linestobewaryof.Contains(collide))
-                            {
-                                collidetime = newparab.NonZeroIntersectionTime(collide); // we expect one zero
-                            }
-                            else
-                            {
-                                collidetime = newparab.FirstIntersectionTime(collide);
-                            }
-                            if (collidetime.HasValue && collidetime.Value < mint)
-                            {
-                                mint = collidetime.Value;
-                                collider = collide;
-                            }
-                        }
-                        parabs.Add(newparab);
-                        if (collider != null)
-                        {
-                            linestobewaryof = new IntLine[0];
-                            linetonotcollide = collider;
-                            newparab.time = mint;
-                            Vector2D velat = newparab.VelAt(mint);
-                            double crossp = (velat.x * collider.DY - velat.y * collider.DX) / (velat.Length() * collider.Length);
-                            bool oncw = crossp > 0;
-                            if (!(oncw && collider.DX > 0) && !(!oncw && collider.DX < 0))
-                            {
-                                break;
-                            }
-                            newparab = ParabolaSegment.FromBasics(newparab.PosAt(mint), velat.Flatten(collider), player.ay, 10); // TODO: figure out why t=1000 looked weird (renderer duh)
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
+                    IntLine otherline = mainTerrain.Attached(SelectedPoint).Where(x => x != line).First();
+                    fullinfos.Add(AdvGeomLogic.FullJumpInfo(mainTerrain.lines, line, lines, SelectedPoint.AsVector2D(), velocity, player.ay));
                 }
             }
         }

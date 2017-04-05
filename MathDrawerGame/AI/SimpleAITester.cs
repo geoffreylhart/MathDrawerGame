@@ -57,8 +57,8 @@ namespace MathDrawerGame.AI
                         // get the connecting points
                         Vector2D thepoint = mainTerrainClone.points[i];
                         var connecting = mainTerrainClone.Attached(thepoint);
-                        DoAThing2(connecting[0], dfunctions1[i], newdfunctions2, newdfunctions1, newdfunctions2, i, mainTerrainClone);
-                        DoAThing2(connecting[1], dfunctions2[i], newdfunctions1, newdfunctions1, newdfunctions2, i, mainTerrainClone);
+                        DoAThing2(connecting[0], connecting[1], dfunctions1[i], newdfunctions2, newdfunctions1, newdfunctions2, i, mainTerrainClone);
+                        DoAThing2(connecting[1], connecting[0], dfunctions2[i], newdfunctions1, newdfunctions1, newdfunctions2, i, mainTerrainClone);
                     }
                     dfunctions1 = newdfunctions1;
                     dfunctions2 = newdfunctions2;
@@ -78,27 +78,57 @@ namespace MathDrawerGame.AI
             prevbutton = Mouse.GetState().RightButton;
         }
 
-        private void DoAThing2(Line2D theline, DiscreteFunction dfunction, DiscreteFunction[] newdfunctions, DiscreteFunction[] newdfunctions1, DiscreteFunction[] newdfunctions2, int i, SavableTerrain2D mainTerrainClone)
+        // "theline" is actual path we are taking, opposite of the path we rode in on
+        // "otherline" is the line we rode in on, we are guaranteed to be on the "top" of this
+        // TODO: wait how do we deal with vertical lines again?? not that it's ever ambiguous in our current level...
+        private void DoAThing2(Line2D theline, Line2D otherline, DiscreteFunction dfunction, DiscreteFunction[] newdfunctions, DiscreteFunction[] newdfunctions1, DiscreteFunction[] newdfunctions2, int i, SavableTerrain2D mainTerrainClone)
         {
             if (dfunction != null)
             {
                 Vector2D thepoint = mainTerrainClone.points[i];
+                Vector2D vector1 = otherline.AsVector2DWithEnd(thepoint).Normalize(1);
+                Vector2D vector2 = theline.AsVector2DWithEnd(thepoint).Normalize(1) * -1;
+                bool bouncejump = vector1.x*vector2.x<0; // you will bounce jump whenver you go left to right, or right to left (we'll say not if either is vertical)
+                bool justjump=false; // this will happen if you only have one line (which we haven't coded for), or when the path curves down
+                if (vector1.x > 0 && vector1.CrossProduct(vector2)<0)
+                {
+                    justjump = true;
+                }
+                if (vector1.x < 0 && vector1.CrossProduct(vector2) > 0)
+                {
+                    justjump = true;
+                }
+                if (bouncejump && justjump)
+                {
+                    throw new NotImplementedException();
+                }
                 int thei = mainTerrainClone.points.IndexOf(theline.OtherP(thepoint));
                 double thea1 = apg + theline.AsVector2D().GravityMultiplier() * ay;
                 double thea2 = -apg + theline.AsVector2D().GravityMultiplier() * ay;
                 var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
                 foreach (var time in dfunction.times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
                 {
-                    if (attachedattached[0] == theline) // weird logic, pretty sure this is whats broken
+                    if (!bouncejump && !justjump)
                     {
-                        DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
+                        if (attachedattached[0] == theline) // weird logic
+                        {
+                            DoAThing(time, theline, thepoint, thei, newdfunctions2, new StraightEq(thea1, thea2, theline.Length));
+                        }
+                        else
+                        {
+                            DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
+                        }
+                        DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnFasterEq(thea1, thea2, theline.Length)); // because you return, you are always returning to the same point using the other function list
+                        DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnSlowerEq(thea1, thea2, theline.Length));
                     }
-                    else
+                    if (justjump)
                     {
-                        DoAThing(time, theline, thepoint, thei, newdfunctions1, new StraightEq(thea1, thea2, theline.Length));
+                        // TODO: we're going to forget about 0-speed for now, where you're allowed to hit one of the lines you're flying off
+                        Line2D linetoavoid = otherline; // no collision at all possible with this
+                        Line2D linetomostlyavoid = theline; // only 1 of 2 possible collisions with this
+
+                        //var jumpinfo = AdvGeomLogic.FullJumpInfo(mainTerrainClone.lines, linetoavoid, linetomostlyavoid, vector1 * (time.Key/PREC));
                     }
-                    DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnFasterEq(thea1, thea2, theline.Length)); // because you return, you are always returning to the same point using the other function list
-                    DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnSlowerEq(thea1, thea2, theline.Length));
                 }
             }
         }

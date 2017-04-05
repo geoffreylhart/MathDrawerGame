@@ -1,4 +1,5 @@
-﻿using MathDrawerGame.Geom;
+﻿using MathDrawerGame.AI.Animations;
+using MathDrawerGame.Geom;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -27,6 +28,17 @@ namespace MathDrawerGame
             for (int i = 0; i <= 100; i++)
             {
                 Vector2D pos = parabola.PosAt(parabola.time * i / 100.0);
+                vertices[i] = new VertexPositionColor(new Vector3((float)pos.x, (float)pos.y, 0), color.Value);
+            }
+            effect.DrawLineStrip(GraphicsDevice, vertices);
+        }
+        public static void DrawAnimation(this BasicEffect effect, GraphicsDevice GraphicsDevice, IAnimation2D anim, Color? color = null)
+        {
+            if (color == null) color = Color.White;
+            VertexPositionColor[] vertices = new VertexPositionColor[101];
+            for (int i = 0; i <= 100; i++)
+            {
+                Vector2D pos = anim.Pos(anim.Time() * i / 100.0);
                 vertices[i] = new VertexPositionColor(new Vector3((float)pos.x, (float)pos.y, 0), color.Value);
             }
             effect.DrawLineStrip(GraphicsDevice, vertices);

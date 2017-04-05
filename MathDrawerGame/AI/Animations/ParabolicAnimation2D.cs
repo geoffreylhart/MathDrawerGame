@@ -8,7 +8,7 @@ namespace MathDrawerGame.AI.Animations
 {
     class ParabolicAnimation2D : IAnimation2D
     {
-        private double time;
+        public double time;
         private Vector2D pos;
         private Vector2D v;
         private Vector2D a;
@@ -30,6 +30,11 @@ namespace MathDrawerGame.AI.Animations
         public override Vector2D V(double t)
         {
             return a * t + v;
+        }
+
+        public ParabolaSegment ToSegment()
+        {
+            return ParabolaSegment.FromBasics(pos, v, a.y, time);
         }
     }
 }
