@@ -114,10 +114,72 @@ namespace MathDrawerGame.Geom
             return fullinfo;
         }
 
+        // copy paste of above but with line2d
+        // linetoavoid -  no collision at all possible with this
+        // linetomostlyavoid - only 1 of 2 possible collisions with this
+        internal static JumpInfo FullJumpInfo(List<Line2D> list, Line2D linetoavoid, Line2D[] linetomostlyavoid, Vector2D start, Vector2D velocity, double a)
+        {
+            JumpInfo fullinfo = new JumpInfo();
+            ParabolicAnimation2D newparab = new ParabolicAnimation2D(start, velocity, new Vector2D(0, a), 10);
+            for (int i = 0; i < 10; i++)
+            {
+                MathDrawerGame.Geom.ParabolaSegment.IntersectionInfo mint = new ParabolaSegment.IntersectionInfo(double.PositiveInfinity,0);
+                Line2D collider = null;
+                foreach (Line2D collide in list)
+                {
+                    MathDrawerGame.Geom.ParabolaSegment.IntersectionInfo collidetime;
+                    if (linetoavoid == collide)
+                    {
+                        continue; // we expect two zeroes
+                    }
+                    else if (linetomostlyavoid.Contains(collide))
+                    {
+                        collidetime = newparab.ToSegment().NonZeroIntersectionTime(collide); // we expect one zero
+                    }
+                    else
+                    {
+                        collidetime = newparab.ToSegment().FirstIntersectionTime(collide);
+                    }
+                    if (collidetime != null && collidetime.parabtime < mint.parabtime)
+                    {
+                        mint = collidetime;
+                        collider = collide;
+                    }
+                }
+                fullinfo.anim += newparab;
+                ParabolaSegment newparabasseg = newparab.ToSegment();
+                fullinfo.parabs.Add(newparabasseg);
+                fullinfo.collider = collider;
+                if (collider != null)
+                {
+                    fullinfo.collidep = mint.linep;
+                    linetomostlyavoid = new Line2D[0];
+                    linetoavoid = collider;
+                    newparab.time = mint.parabtime;
+                    newparabasseg.time = mint.parabtime;
+                    Vector2D velat = newparab.V(mint.parabtime);
+                    double crossp = (velat.x * collider.DY - velat.y * collider.DX) / (velat.Length() * collider.Length);
+                    bool oncw = crossp > 0;
+                    if (!(oncw && collider.DX > 0) && !(!oncw && collider.DX < 0))
+                    {
+                        break;
+                    }
+                    newparab = new ParabolicAnimation2D(newparab.Pos(mint.parabtime), velat.Flatten(collider), new Vector2D(0, a), 10); // TODO: figure out why t=1000 looked weird (renderer duh)
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return fullinfo;
+        }
+
         public class JumpInfo
         {
             public IAnimation2D anim = new EmptyAnimation2D();
             public List<ParabolaSegment> parabs = new List<ParabolaSegment>();
+            public Line2D collider;
+            public double collidep;
         }
     }
 }

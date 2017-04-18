@@ -64,6 +64,57 @@ namespace MathDrawerGame.Geom
             return null;
         }
 
+        // copy of above but with line2d
+        internal IntersectionInfo FirstIntersectionTime(Line2D line) // TODO: make a Line2D class
+        {
+            if (line.Vertical) // infinite slope
+            {
+                if (velocity.x == 0) return null; // TODO: consider changing this case
+                double t = (line.p1.x - start.x) / velocity.x;
+                if (MathHelper.Between(t, 0, time))
+                {
+                    double newy = 0.5 * accel * t * t + velocity.y * t + start.y;
+                    if (MathHelper.Between(newy, line.p1.y, line.p2.y))
+                    {
+                        return new IntersectionInfo(t, (newy - line.p1.y) / line.DY);
+                    }
+                }
+            }
+            else
+            {
+                double a = 0.5 * accel;
+                double b = velocity.y - line.M * velocity.x;
+                double c = start.y - line.B - line.M * start.x;
+                if (b * b - 4 * a * c < 0) return null;
+                double t1 = (-b - Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+                double t2 = (-b + Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+                foreach (double t in new double[] { t1, t2 })
+                {
+                    if (MathHelper.Between(t, 0, time))
+                    {
+                        double newx = start.x + t * velocity.x;
+                        if (MathHelper.Between(newx, line.p1.x, line.p2.x))
+                        {
+                            return new IntersectionInfo(t, (newx-line.p1.x)/line.DX);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public class IntersectionInfo
+        {
+            public double parabtime;
+            public double linep;
+
+            public IntersectionInfo(double parabtime, double linep)
+            {
+                this.parabtime = parabtime;
+                this.linep = linep;
+            }
+        }
+
         internal double? NonZeroIntersectionTime(IntLine line) // when you expect a zero - TODO: rename method to something like "closest absolute time"
         {
             if (line.Vertical) // infinite slope
@@ -89,6 +140,38 @@ namespace MathDrawerGame.Geom
                     if (MathHelper.Between(newx, line.p1.x, line.p2.x))
                     {
                         return t;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // copy of above but with line2d
+        internal IntersectionInfo NonZeroIntersectionTime(Line2D line) // when you expect a zero - TODO: rename method to something like "closest absolute time"
+        {
+            if (line.Vertical) // infinite slope
+            {
+                return null; // TODO: consider changing this case
+            }
+            else
+            {
+                double a = 0.5 * accel;
+                double b = velocity.y - line.M * velocity.x;
+                double c = start.y - line.B - line.M * start.x;
+                if (b * b - 4 * a * c < 0) return null;
+                double t1 = (-b - Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+                double t2 = (-b + Math.Sqrt(b * b - 4 * a * c)) / (2 * a);
+                double t = t1;
+                if (Math.Abs(t2) > Math.Abs(t1))
+                {
+                    t = t2;
+                }
+                if (MathHelper.Between(t, 0, time))
+                {
+                    double newx = start.x + t * velocity.x;
+                    if (MathHelper.Between(newx, line.p1.x, line.p2.x))
+                    {
+                        return new IntersectionInfo(t, (newx - line.p1.x)/line.DX);
                     }
                 }
             }

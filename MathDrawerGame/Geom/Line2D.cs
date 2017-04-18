@@ -20,7 +20,7 @@ namespace MathDrawerGame.Geom
 
         public override bool Equals(object o)
         {
-            IntLine that = (IntLine)o;
+            Line2D that = (Line2D)o;
             if (this.p1.Equals(that.p1) && this.p2.Equals(that.p2)) return true;
             if (this.p2.Equals(that.p1) && this.p1.Equals(that.p2)) return true;
             return false;
@@ -88,6 +88,11 @@ namespace MathDrawerGame.Geom
         {
             if (p1 == p) return p2;
             return p1;
+        }
+
+        internal double PV(Vector2D vector2D)
+        {
+            return (DX * vector2D.x + DY * vector2D.y) / this.Length / vector2D.Length();
         }
     }
 }

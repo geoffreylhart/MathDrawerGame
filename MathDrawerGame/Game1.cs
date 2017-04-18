@@ -27,9 +27,9 @@ namespace MathDrawerGame
             movement = new Movement2D();
             Content.RootDirectory = "Content";
             player = new HumanPlayer();
-            debugger = new LaunchTester();
+            //debugger = new LaunchTester();
             //debugger2 = new CritcalLaunchTester();
-            //debugger3 = new SimpleAITester();
+            debugger3 = new SimpleAITester();
         }
 
         protected override void Initialize()
@@ -46,9 +46,9 @@ namespace MathDrawerGame
             basicEffect.World = movement.AsMatrix() * Matrix.CreateScale(20);
             Vector2D mouseRelativeCoords = basicEffect.GetMouseRelative(GraphicsDevice);
             player.Update(gameTime.ElapsedGameTime.TotalSeconds, mainTerrain, mouseRelativeCoords);
-            debugger.Update(player, mainTerrain, mouseRelativeCoords);
+            //debugger.Update(player, mainTerrain, mouseRelativeCoords);
             //debugger2.Update(player, mainTerrain, mouseRelativeCoords);
-            //debugger3.Update(player, mainTerrain, mouseRelativeCoords, gameTime.ElapsedGameTime.TotalSeconds);
+            debugger3.Update(player, mainTerrain, mouseRelativeCoords, gameTime.ElapsedGameTime.TotalSeconds);
         }
 
         protected override void Draw(GameTime gameTime)
@@ -57,9 +57,9 @@ namespace MathDrawerGame
             mainTerrain.Draw(basicEffect, GraphicsDevice, font);
             player.Draw(basicEffect, GraphicsDevice);
             basicEffect.DrawStringAbsolute(GraphicsDevice, font, player.errortext, 5, 50);
-            debugger.Draw(basicEffect, GraphicsDevice);
+            //debugger.Draw(basicEffect, GraphicsDevice);
             //debugger2.Draw(basicEffect, GraphicsDevice);
-            //debugger3.Draw(basicEffect, GraphicsDevice);
+            debugger3.Draw(basicEffect, GraphicsDevice);
         }
     }
 }

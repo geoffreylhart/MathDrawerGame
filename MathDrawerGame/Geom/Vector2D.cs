@@ -31,6 +31,12 @@ namespace MathDrawerGame.Geom
             return x * x + y * y;
         }
 
+        public override bool Equals(object o)
+        {
+            Vector2D that = (Vector2D)o;
+            return this.x == that.x && this.y == that.y;
+        }
+
         public Vector2D Normalize(double n)
         {
             double len = this.Length();
@@ -54,6 +60,19 @@ namespace MathDrawerGame.Geom
         }
 
         internal Vector2D Flatten(IntLine collider)
+        {
+            double totalv = this.Length();
+            // note, I think this works regardless of which direction the line is facing
+            double dotp = (this.x * collider.DX + this.y * collider.DY) / (totalv * collider.Length);
+            double vp = totalv / collider.Length;
+            vp *= dotp;
+            double vx = vp * collider.DX;
+            double vy = vp * collider.DY;
+            return new Vector2D(vx, vy);
+        }
+
+        // copy of above but with line2d
+        internal Vector2D Flatten(Line2D collider)
         {
             double totalv = this.Length();
             // note, I think this works regardless of which direction the line is facing

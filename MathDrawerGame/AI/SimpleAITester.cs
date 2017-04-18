@@ -108,7 +108,7 @@ namespace MathDrawerGame.AI
                 var attachedattached = mainTerrainClone.Attached(mainTerrainClone.points[thei]);
                 foreach (var time in dfunction.times.ToList()) // suddenly this is complaining about modification with the addition of returnfaster/returnslower?? using tolist to quiet it
                 {
-                    if (!bouncejump && !justjump)
+                    //if (!bouncejump && !justjump)// TODO: hardcoding conditions because we've messed up somehow
                     {
                         if (attachedattached[0] == theline) // weird logic
                         {
@@ -121,13 +121,73 @@ namespace MathDrawerGame.AI
                         DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnFasterEq(thea1, thea2, theline.Length)); // because you return, you are always returning to the same point using the other function list
                         DoAThing(time, theline, thepoint, i, newdfunctions, new ReturnSlowerEq(thea1, thea2, theline.Length));
                     }
-                    if (justjump)
+                    //if (justjump)// TODO: hardcoding conditions because we've messed up somehow
                     {
                         // TODO: we're going to forget about 0-speed for now, where you're allowed to hit one of the lines you're flying off
                         Line2D linetoavoid = otherline; // no collision at all possible with this
                         Line2D linetomostlyavoid = theline; // only 1 of 2 possible collisions with this
 
-                        //var jumpinfo = AdvGeomLogic.FullJumpInfo(mainTerrainClone.lines, linetoavoid, linetomostlyavoid, vector1 * (time.Key/PREC));
+                        //fullinfos.Add(AdvGeomLogic.FullJumpInfo(mainTerrain.lines, line, lines, SelectedPoint.AsVector2D(), velocity, player.ay));
+                        var jumpinfo = AdvGeomLogic.FullJumpInfo(mainTerrainClone.lines, otherline, new Line2D[] { theline }, thepoint, vector1 * (time.Key / PREC), 9.8);
+                        if (jumpinfo != null && jumpinfo.collider!=null)
+                        {
+                            var relv = jumpinfo.collider.PV(jumpinfo.anim.EndV());
+                            var actualv = relv * jumpinfo.collider.Length;
+                            if (relv > 0)
+                            {
+                                int landi = mainTerrainClone.points.IndexOf(jumpinfo.collider.p2);
+                                double landa1 = apg + jumpinfo.collider.AsVector2D().GravityMultiplier() * ay;
+                                double landa2 = -apg + jumpinfo.collider.AsVector2D().GravityMultiplier() * ay;
+                                ISpeedTimeFunction path = new StraightEq(landa1, landa2, (1 - jumpinfo.collidep) * jumpinfo.collider.Length);
+                                Bounds vbounds = path.EBound(actualv / PREC);
+                                if (vbounds != null)
+                                {
+                                    int low = (int)Math.Ceiling(vbounds.low * PREC);
+                                    int high = (int)(vbounds.high * PREC);
+                                    Vector2D vector = jumpinfo.collider.AsVector2D().Normalize(1);
+                                    for (int j = low; j <= high; j++)
+                                    {
+                                        IAnimation pathanim = path.Animate(actualv / PREC, j / PREC);
+                                        if (pathanim == null) continue; // this has happened, I think
+                                        IAnimation2D animation = new AnimationFrom1D(jumpinfo.anim.EndPos(), vector, pathanim);
+                                        animation = time.Value + jumpinfo.anim + animation;
+                                        if (newdfunctions[landi] == null) newdfunctions[landi] = new DiscreteFunction();
+                                        if (!newdfunctions[landi].times.ContainsKey(Math.Abs(j)) || animation.Time() < newdfunctions[landi].times[Math.Abs(j)].Time())
+                                        {
+                                            newdfunctions[landi].Put(Math.Abs(j), animation);
+                                        }
+                                    }
+                                }
+                                // TODO: ignoring return moves for jumping for now
+                            }
+                            else
+                            {
+                                int landi = mainTerrainClone.points.IndexOf(jumpinfo.collider.p1);
+                                double landa1 = apg + jumpinfo.collider.AsVector2D().GravityMultiplier() * ay;
+                                double landa2 = -apg + jumpinfo.collider.AsVector2D().GravityMultiplier() * ay;
+                                ISpeedTimeFunction path = new StraightEq(landa1, landa2, jumpinfo.collidep * jumpinfo.collider.Length);
+                                Bounds vbounds = path.EBound(-actualv / PREC);
+                                if (vbounds != null)
+                                {
+                                    int low = (int)Math.Ceiling(vbounds.low * PREC);
+                                    int high = (int)(vbounds.high * PREC);
+                                    Vector2D vector = jumpinfo.collider.AsVector2D().Normalize(1) * -1;
+                                    for (int j = low; j <= high; j++)
+                                    {
+                                        IAnimation pathanim = path.Animate(-actualv / PREC, j / PREC);
+                                        if (pathanim == null) continue; // this has happened, I think
+                                        IAnimation2D animation = new AnimationFrom1D(jumpinfo.anim.EndPos(), vector, pathanim);
+                                        animation = time.Value + jumpinfo.anim + animation;
+                                        if (newdfunctions[landi] == null) newdfunctions[landi] = new DiscreteFunction();
+                                        if (!newdfunctions[landi].times.ContainsKey(Math.Abs(j)) || animation.Time() < newdfunctions[landi].times[Math.Abs(j)].Time())
+                                        {
+                                            newdfunctions[landi].Put(Math.Abs(j), animation);
+                                        }
+                                    }
+                                }
+                                // TODO: ignoring return moves for jumping for now
+                            }
+                        }
                     }
                 }
             }

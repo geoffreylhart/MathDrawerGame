@@ -39,7 +39,14 @@ namespace MathDrawerGame.LevelEditor
             points = new List<IntPoint>();
             for (int i = 0; i < count; i++)
             {
-                points.Add(new IntPoint(reader.ReadInt32(), reader.ReadInt32()));
+                if (i == 9)
+                {
+                    points.Add(new IntPoint(reader.ReadInt32(), reader.ReadInt32()+15));
+                }
+                else
+                {
+                    points.Add(new IntPoint(reader.ReadInt32(), reader.ReadInt32()));
+                }
             }
             count = reader.ReadInt32();
             lines = new List<IntLine>();
